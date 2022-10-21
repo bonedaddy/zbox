@@ -158,7 +158,18 @@ impl Storage {
             addr_cache: Lru::new(Self::ADDRESS_CACHE_SIZE),
         })
     }
+    pub fn new2(depot: Box<dyn Storable>) -> Result<Self> {
+        let frame_cache = Lru::new(Self::FRAME_CACHE_SIZE);
 
+        Ok(Storage {
+            depot,
+            allocator: Allocator::new().into_ref(),
+            crypto: Crypto::default(),
+            key: Key::new_empty(),
+            frame_cache,
+            addr_cache: Lru::new(Self::ADDRESS_CACHE_SIZE),
+        })
+    }
     #[inline]
     pub fn get_key(&self) -> &Key {
         &self.key

@@ -46,7 +46,9 @@ impl Volume {
         let storage = Storage::new(uri)?.into_ref();
         Ok(Volume { info, storage })
     }
-
+    pub fn new2(info: Info, storage: Arc<RwLock<Storage>>) -> Result<Self> {
+        Ok(Volume {info, storage})
+    }
     /// Initialise volume
     pub fn init(
         &mut self,
