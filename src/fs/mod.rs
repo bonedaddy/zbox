@@ -3,7 +3,7 @@
 //!
 
 pub mod fnode;
-mod fs;
+pub mod fs;
 
 use serde::{Deserialize, Serialize};
 

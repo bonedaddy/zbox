@@ -2,14 +2,14 @@
 //! content module document
 //!
 
-mod chunk;
-mod chunker;
-mod content;
-mod entry;
-mod merkle_tree;
-mod segment;
-mod span;
-mod store;
+pub mod chunk;
+pub mod chunker;
+pub mod content;
+pub mod entry;
+pub mod merkle_tree;
+pub mod segment;
+pub mod span;
+pub mod store;
 
 pub use self::chunk::ChunkMap;
 pub use self::content::{Content, ContentRef, Reader as ContentReader};

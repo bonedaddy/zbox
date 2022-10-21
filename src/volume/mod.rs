@@ -2,12 +2,12 @@
 //! volume module document
 //!
 
-mod address;
-mod allocator;
-mod armor;
-mod storage;
-mod super_block;
-mod volume;
+pub mod address;
+pub mod allocator;
+pub mod armor;
+pub mod storage;
+pub mod super_block;
+pub mod volume;
 
 pub use self::allocator::{Allocator, AllocatorRef};
 pub use self::armor::{

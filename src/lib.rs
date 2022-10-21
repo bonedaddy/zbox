@@ -115,15 +115,15 @@ macro_rules! from_io_err {
     };
 }
 
-mod base;
-mod content;
-mod error;
-mod file;
-mod fs;
-mod repo;
-mod trans;
-mod version;
-mod volume;
+pub mod base;
+pub mod content;
+pub mod error;
+pub mod file;
+pub mod fs;
+pub mod repo;
+pub mod trans;
+pub mod version;
+pub mod volume;
 
 pub use self::base::crypto::{Cipher, MemLimit, OpsLimit};
 pub use self::base::{init_env, zbox_version};

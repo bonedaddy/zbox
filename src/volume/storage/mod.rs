@@ -1,37 +1,37 @@
 #![allow(clippy::module_inception)]
 
-mod storage;
+pub mod storage;
 
 pub use self::storage::{
     Reader, Storage, StorageRef, WalReader, WalWriter, Writer,
 };
 
 #[cfg(feature = "storage-mem")]
-mod mem;
+pub mod mem;
 
 #[cfg(feature = "storage-file")]
-mod file;
+pub mod file;
 
 #[cfg(any(feature = "storage-faulty", feature = "storage-zbox-faulty"))]
-mod faulty_ctl;
+pub mod faulty_ctl;
 
 #[cfg(feature = "storage-faulty")]
-mod faulty;
+pub mod faulty;
 
 #[cfg(any(feature = "storage-faulty", feature = "storage-zbox-faulty"))]
 pub use self::faulty_ctl::Controller as FaultyController;
 
 #[cfg(feature = "storage-sqlite")]
-mod sqlite;
+pub mod sqlite;
 
 #[cfg(feature = "storage-redis")]
-mod redis;
+pub mod redis;
 
 #[cfg(feature = "storage-zbox")]
-mod zbox;
+pub mod zbox;
 
 #[cfg(any(feature = "storage-file", feature = "storage-zbox"))]
-mod index_mgr;
+pub mod index_mgr;
 
 use std::fmt::Debug;
 
