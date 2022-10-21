@@ -118,7 +118,9 @@ impl Fs {
         let vol = Volume::new(uri)?;
         vol.exists()
     }
-
+    pub fn exists2(mut vol: Volume) -> Result<bool> {
+        vol.exists()
+    }
     /// Create new fs
     pub fn create(uri: &str, pwd: &str, cfg: &Config) -> Result<Fs> {
         let root_id = Eid::new();

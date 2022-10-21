@@ -9,6 +9,7 @@ use crate::base::{self, Time};
 use crate::error::Error;
 use crate::fs::{Config, DirEntry, FileType, Fs, Metadata, Options, Version};
 use crate::trans::Eid;
+use crate::volume::Volume;
 
 /// A builder used to create a repository [`Repo`] in various manners.
 ///
@@ -275,6 +276,27 @@ impl RepoOpener {
             }
         } else {
             Repo::open(uri, pwd, self.read_only, self.force)
+        }
+    }
+    pub fn open2(&self, vol: Volume, pwd: &str) -> Result<Repo> {
+        // version limit must be greater than 0
+        if self.cfg.opts.version_limit == 0 {
+            return Err(Error::InvalidArgument);
+        }
+        if self.create {
+            if self.read_only {
+                return Err(Error::InvalidArgument);
+            }
+            if Repo::exists2(vol.clone())? {
+                if self.create_new {
+                    return Err(Error::RepoExists);
+                }
+                Repo::open2(vol.clone(), pwd, self.read_only, self.force)
+            } else {
+                Repo::create2(vol.clone(), pwd, &self.cfg)
+            }
+        } else {
+            Repo::open2(vol.clone(), pwd, self.read_only, self.force)
         }
     }
 }
@@ -710,6 +732,10 @@ impl Repo {
     pub fn exists(uri: &str) -> Result<bool> {
         Fs::exists(uri)
     }
+    #[inline]
+    pub fn exists2(volume: Volume) -> Result<bool> {
+        Fs::exists2(volume)
+    }
 
     // create repo
     #[inline]
@@ -717,7 +743,11 @@ impl Repo {
         let fs = Fs::create(uri, pwd, cfg)?;
         Ok(Repo { fs })
     }
-
+    #[inline]
+    fn create2(volume: Volume, pwd: &str, cfg: &Config) -> Result<Repo> {
+        let fs = Fs::create2(volume, pwd, cfg)?;
+        Ok(Repo { fs })
+    }
     // open repo
     #[inline]
     fn open(
@@ -729,7 +759,17 @@ impl Repo {
         let fs = Fs::open(uri, pwd, read_only, force)?;
         Ok(Repo { fs })
     }
-
+    // open repo
+    #[inline]
+    fn open2(
+        volume: Volume,
+        pwd: &str,
+        read_only: bool,
+        force: bool,
+    ) -> Result<Repo> {
+        let fs = Fs::open2(volume, pwd, read_only, force)?;
+        Ok(Repo { fs })
+    }
     /// Get repository metadata information.
     pub fn info(&self) -> Result<RepoInfo> {
         let meta = self.fs.info();

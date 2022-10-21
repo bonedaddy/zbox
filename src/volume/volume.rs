@@ -30,7 +30,7 @@ pub struct Info {
 }
 
 /// Volume
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone)]
 pub struct Volume {
     info: Info,
     storage: StorageRef,
