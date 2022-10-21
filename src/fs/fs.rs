@@ -165,7 +165,49 @@ impl Fs {
             read_only: false,
         })
     }
+    pub fn create2(mut vol: Volume, pwd: &str, cfg: &Config) -> Result<Fs> {
+        let root_id = Eid::new();
+        let walq_id = Eid::new();
+        let store_id = Eid::new();
+        let payload = Payload::new(&root_id, &walq_id, &store_id, cfg.opts);
 
+        info!("create repo: {}", mask_uri(&vol.info().uri));
+
+        vol.init(pwd, cfg, &payload.seri()?)?;
+
+        let vol = vol.into_ref();
+
+        // create tx manager and fnode cache
+        let txmgr = TxMgr::new(&walq_id, &vol).into_ref();
+        let fcache = FnodeCache::new(Self::FNODE_CACHE_SIZE);
+
+        // the initial transaction to create root fnode and save store,
+        // it must be successful
+        let mut store_ref: Option<StoreRef> = None;
+        let mut root_ref: Option<FnodeRef> = None;
+        TxMgr::begin_trans(&txmgr)?.run_all(|| {
+            let store_cow = Store::new(cfg.opts.dedup_file, &txmgr, &vol)
+                .into_cow_with_id(&store_id, &txmgr)?;
+            let root_cow = Fnode::new(FileType::Dir, cfg.opts)
+                .into_cow_with_id(&root_id, &txmgr)?;
+            root_ref = Some(root_cow);
+            store_ref = Some(store_cow);
+            Ok(())
+        })?;
+
+        info!("repo created");
+
+        Ok(Fs {
+            root: root_ref.unwrap(),
+            fcache,
+            store: store_ref.unwrap(),
+            txmgr,
+            vol,
+            shutter: Shutter::new(),
+            opts: cfg.opts,
+            read_only: false,
+        })
+    }
     /// Open fs
     pub fn open(
         uri: &str,
@@ -209,7 +251,48 @@ impl Fs {
             read_only,
         })
     }
+    /// Open fs
+    pub fn open2(
+        mut vol: Volume,
+        pwd: &str,
+        read_only: bool,
+        force: bool,
+    ) -> Result<Fs> {
 
+        info!(
+            "open repo: {}, read_only: {}",
+            mask_uri(&vol.info().uri),
+            read_only
+        );
+
+        // open volume
+        let payload = vol.open(pwd, force)?;
+        let vol = vol.into_ref();
+
+        // deserialize payload
+        let payload = Payload::deseri(&payload)?;
+
+        // open transaction manager
+        let txmgr = TxMgr::open(&payload.walq_id, &vol)?.into_ref();
+
+        // create other file sytem components
+        let store = Store::open(&payload.store_id, &txmgr, &vol)?;
+        let root = Fnode::load_root(&payload.root_id, &vol)?;
+        let fcache = FnodeCache::new(Self::FNODE_CACHE_SIZE);
+
+        info!("repo opened");
+
+        Ok(Fs {
+            root,
+            fcache,
+            store,
+            txmgr,
+            vol,
+            shutter: Shutter::new(),
+            opts: payload.opts,
+            read_only,
+        })
+    }
     #[inline]
     pub fn is_read_only(&self) -> bool {
         self.read_only
@@ -251,7 +334,9 @@ impl Fs {
         let mut vol = Volume::new(uri)?;
         vol.repair_super_block(pwd)
     }
-
+    pub fn repair_super_block2(mut vol: Volume, pwd: &str) -> Result<()> {
+        vol.repair_super_block(pwd)
+    }
     /// Resolve path
     pub fn resolve(&self, path: &Path) -> Result<FnodeRef> {
         // only resolve absolute path
@@ -639,6 +724,13 @@ impl Fs {
     #[inline]
     pub fn destroy(uri: &str) -> Result<()> {
         let mut vol = Volume::new(uri)?;
+        vol.destroy()?;
+        info!("repo destroyed");
+        Ok(())
+    }
+    /// Destroy the whole file system
+    #[inline]
+    pub fn destroy2(mut vol: Volume) -> Result<()> {
         vol.destroy()?;
         info!("repo destroyed");
         Ok(())
